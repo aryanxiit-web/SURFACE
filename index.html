@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#08080c">
+<title>SURFACE. — Active Recall</title>
+<link rel="manifest" href="/SURFACE/manifest.json">
+<link rel="icon" href="/SURFACE/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/SURFACE/icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SURFACE.">
+<meta name="description" content="Active recall checklist for JEE Physics, Chemistry, and Maths.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08080c;
+  --panel:#101018;
+  --panel2:#15151f;
+  --border:#232332;
+  --text:#eef0f6;
+  --muted:#7a7a8c;
+  --muted2:#4d4d5c;
+  --physics:#29d3ee;
+  --physics-dim:rgba(41,211,238,0.13);
+  --chem:#f5a623;
+  --chem-dim:rgba(245,166,35,0.13);
+  --maths:#e0399e;
+  --maths-dim:rgba(224,57,158,0.13);
+  --accent:var(--physics);
+  --accent-dim:var(--physics-dim);
+  --radius:14px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5), 0 1px 1px rgba(0,0,0,.35);
+  --shadow-md:0 10px 24px -8px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.35);
+  --shadow-lg:0 18px 40px -12px rgba(0,0,0,.6), 0 6px 14px -4px rgba(0,0,0,.4);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+body{
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh;
+  overscroll-behavior-y:none;
+  padding-bottom:40px;
+  position:relative;
+}
+
+/* ---------- ambient depth ---------- */
+.bg-orbs{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);will-change:transform;}
+.orb1{width:340px;height:340px;background:#29d3ee;opacity:.14;top:-90px;left:-110px;animation:drift1 26s ease-in-out infinite alternate;}
+.orb2{width:380px;height:380px;background:#e0399e;opacity:.12;bottom:-130px;right:-110px;animation:drift2 32s ease-in-out infinite alternate;}
+@keyframes drift1{from{transform:translate(0,0) scale(1);}to{transform:translate(46px,64px) scale(1.18);}}
+@keyframes drift2{from{transform:translate(0,0) scale(1);}to{transform:translate(-54px,-42px) scale(1.12);}}
+#app{position:relative;z-index:1;}
+h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;}
+::selection{background:var(--accent);color:#08080c;}
+button{font-family:inherit;cursor:pointer;}
+input{font-family:inherit;}
+a{color:inherit;}
+
+/* ---------- topbar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  background:rgba(8,8,12,0.88);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  padding:14px 18px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 8px 24px -14px rgba(0,0,0,.7);
+}
+.topbar .back{
+  width:34px;height:34px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);flex-shrink:0;
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.05);
+  transition:transform .15s var(--ease-out), box-shadow .15s ease;
+}
+.topbar .back:active{transform:scale(.88) translateY(1px) perspective(300px) rotateX(8deg);box-shadow:var(--shadow-sm);}
+.topbar .back svg{width:16px;height:16px;}
+.topbar .title-wrap{flex:1;min-width:0;}
+.topbar .eyebrow{
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);font-weight:600;margin-bottom:1px;
+}
+.topbar h1{
+  font-size:19px;margin:0;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.topbar .brand{
+  font-size:19px;font-weight:700;letter-spacing:-0.01em;
+}
+.topbar .brand .dot{color:var(--accent);}
+
+/* wave divider — the "surface" line */
+.wave{display:block;width:100%;height:10px;margin-top:10px;}
+.wave path{fill:none;stroke:var(--accent);stroke-width:1.4;opacity:.55;stroke-dasharray:7 6;animation:waveFlow 3.2s linear infinite;}
+@keyframes waveFlow{to{stroke-dashoffset:-26;}}
+
+.wrap{max-width:640px;margin:0 auto;padding:0 18px;}
+
+/* ---------- home ---------- */
+.home-hero{padding:26px 0 6px;}
+.home-hero .brand{font-size:34px;font-weight:700;letter-spacing:-0.02em;}
+.home-hero .brand .dot{color:var(--physics);}
+.home-hero p{color:var(--muted);font-size:13px;line-height:1.55;margin:8px 0 0;max-width:46ch;}
+
+.stat-strip{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  margin:20px 0 22px;
+}
+.stat-box{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 12px;text-align:center;
+  box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.04);
+  animation:cardIn .45s var(--ease-out) backwards;
+  transition:transform .2s var(--ease-out);
+}
+.stat-box:nth-child(2){animation-delay:.05s;}
+.stat-box:nth-child(3){animation-delay:.1s;}
+.stat-box .num{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;line-height:1;}
+.stat-box .lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:6px;}
+
+.search-box{
+  position:relative;margin-bottom:20px;
+}
+.search-box input{
+  width:100%;background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:12px 14px 12px 38px;color:var(--text);
+  font-size:13px;outline:none;
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.04);
+  transition:box-shadow .2s var(--ease-out), border-color .2s ease;
+}
+.search-box input:focus{border-color:var(--accent);box-shadow:var(--shadow-md), 0 0 0 3px var(--accent-dim);}
+.search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--muted);}
+.search-results{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.search-hit{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:10px 13px;font-size:12.5px;
+  box-shadow:var(--shadow-sm);
+  animation:cardIn .3s var(--ease-out) backwards;
+  transition:transform .16s var(--ease-out), box-shadow .16s ease;
+}
+.search-hit:active{transform:scale(.97) perspective(500px) rotateX(3deg);box-shadow:var(--shadow-sm);}
+.search-hit .sub{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+.subject-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:10px;perspective:800px;}
+.subject-card{
+  background:linear-gradient(155deg, var(--panel2), var(--panel));border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px;display:flex;align-items:center;gap:16px;
+  position:relative;overflow:hidden;
+  box-shadow:var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.05);
+  animation:cardIn .5s var(--ease-out) backwards;
+  transition:transform .22s var(--ease-out), box-shadow .22s var(--ease-out);
+  transform-style:preserve-3d;
+}
+.subject-card:nth-child(2){animation-delay:.06s;}
+.subject-card:nth-child(3){animation-delay:.12s;}
+.subject-card:active{
+  transform:scale(.975) rotateX(3deg) translateY(1px);
+  box-shadow:var(--shadow-sm);
+}
+.subject-card.physics:active{box-shadow:var(--shadow-sm), 0 10px 26px -10px var(--physics-dim);}
+.subject-card.chem:active{box-shadow:var(--shadow-sm), 0 10px 26px -10px var(--chem-dim);}
+.subject-card.maths:active{box-shadow:var(--shadow-sm), 0 10px 26px -10px var(--maths-dim);}
+.subject-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+}
+.subject-card.physics::before{background:var(--physics);}
+.subject-card.chem::before{background:var(--chem);}
+.subject-card.maths::before{background:var(--maths);}
+.subject-card .ring{flex-shrink:0;}
+.subject-card .info{flex:1;min-width:0;}
+.subject-card .name{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;}
+.subject-card .meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.subject-card .pct{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;}
+.subject-card.physics .pct{color:var(--physics);}
+.subject-card.chem .pct{color:var(--chem);}
+.subject-card.maths .pct{color:var(--maths);}
+.subject-card .chev{color:var(--muted2);flex-shrink:0;}
+
+/* ---------- chapter list ---------- */
+.filter-row{display:flex;gap:8px;margin:16px 0;}
+.filter-row input{flex:1;}
+
+.chapter-grid{display:flex;flex-direction:column;gap:9px;padding-bottom:20px;perspective:800px;}
+.chapter-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:14px 15px;display:flex;align-items:center;gap:13px;
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.04);
+  animation:cardIn .38s var(--ease-out) backwards;
+  transition:transform .18s var(--ease-out), box-shadow .18s var(--ease-out), border-color .18s ease;
+  transform-style:preserve-3d;
+}
+.chapter-card:active{
+  transform:scale(.975) rotateX(2.5deg) translateY(1px);
+  box-shadow:var(--shadow-sm);
+  border-color:var(--accent);
+}
+.chapter-card .ringmini{flex-shrink:0;}
+.chapter-card .info{flex:1;min-width:0;}
+.chapter-card .name{font-family:'Space Grotesk',sans-serif;font-size:14.5px;font-weight:500;line-height:1.3;}
+.chapter-card .meta{font-size:10.5px;color:var(--muted);margin-top:4px;display:flex;gap:8px;align-items:center;}
+.chapter-card .meta .dot-sep{width:3px;height:3px;border-radius:50%;background:var(--muted2);}
+.chapter-card .chev{color:var(--muted2);flex-shrink:0;}
+
+/* ---------- checklist ---------- */
+.progress-bar-wrap{margin:16px 0 6px;}
+.progress-bar-track{
+  height:7px;border-radius:4px;background:var(--panel2);overflow:hidden;border:1px solid var(--border);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
+}
+.progress-bar-fill{
+  height:100%;border-radius:4px;background:var(--accent);
+  transition:width .55s var(--ease-out);
+  box-shadow:0 0 10px var(--accent-dim), 0 0 2px var(--accent-dim);
+  position:relative;overflow:hidden;
+}
+.progress-bar-fill::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  width:40%;animation:shimmer 2.2s ease-in-out infinite;
+}
+@keyframes shimmer{0%{transform:translateX(-120%);}100%{transform:translateX(340%);}}
+.progress-legend{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:7px;}
+.progress-legend b{color:var(--text);font-weight:600;}
+
+.tools-row{display:flex;gap:8px;margin:16px 0;}
+.chip{
+  display:flex;align-items:center;gap:6px;
+  background:var(--panel);border:1px solid var(--border);border-radius:20px;
+  padding:8px 13px;font-size:11.5px;color:var(--muted);
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.04);
+  transition:transform .16s var(--ease-spring), box-shadow .16s ease, color .16s ease, border-color .16s ease;
+}
+.chip:active{transform:scale(.92);box-shadow:none;}
+.chip.on{color:var(--accent);border-color:var(--accent);}
+.chip svg{width:12px;height:12px;transition:transform .3s var(--ease-spring);}
+.chip:active svg{transform:rotate(-18deg);}
+.chip.reset-chip{margin-left:auto;color:#e05656;}
+
+.sub-list{display:flex;flex-direction:column;gap:8px;padding-bottom:30px;perspective:900px;}
+.sub-row{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:13px 14px;
+  box-shadow:var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.03);
+  transition:background .3s var(--ease-out), border-color .3s var(--ease-out), box-shadow .3s var(--ease-out), transform .3s var(--ease-out);
+  animation:cardIn .32s var(--ease-out) backwards;
+}
+.sub-row.state-0{opacity:.92;}
+.sub-row.state-1{background:linear-gradient(180deg,var(--accent-dim),var(--panel));border-color:var(--border);}
+.sub-row.state-2{
+  background:linear-gradient(180deg,var(--accent-dim),var(--panel));border-color:var(--accent);
+  box-shadow:var(--shadow-sm), 0 6px 20px -8px var(--accent-dim), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.sub-row-top{display:flex;align-items:flex-start;gap:12px;}
+.tick-btn{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;margin-top:1px;
+  border:1.6px solid var(--muted2);background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s var(--ease-out), background .25s ease, border-color .25s ease, box-shadow .25s ease;
+  transform-style:preserve-3d;
+  padding:0;
+}
+.tick-btn:active{transform:scale(.85);}
+.tick-btn svg{width:13px;height:13px;opacity:0;transition:opacity .15s ease;}
+.sub-row.state-1 .tick-btn{border-color:var(--accent);background:var(--accent-dim);}
+.sub-row.state-1 .tick-btn svg{opacity:1;color:var(--accent);}
+.sub-row.state-2 .tick-btn{border-color:var(--accent);background:var(--accent);box-shadow:0 2px 10px -2px var(--accent-dim);}
+.sub-row.state-2 .tick-btn svg{opacity:1;color:#08080c;}
+.tick-btn.pop{animation:tickPop .45s var(--ease-spring);}
+@keyframes tickPop{
+  0%{transform:perspective(240px) scale(.5) rotateY(70deg);}
+  55%{transform:perspective(240px) scale(1.2) rotateY(-10deg);}
+  100%{transform:perspective(240px) scale(1) rotateY(0deg);}
+}
+.sub-row-title{flex:1;font-size:13.5px;font-weight:500;line-height:1.4;padding-top:2px;}
+.sub-row.state-2 .sub-row-title{color:var(--text);}
+.sub-row.state-0 .sub-row-title{color:var(--text);}
+.hint-btn{
+  flex-shrink:0;width:26px;height:26px;border-radius:8px;margin-top:1px;
+  border:1px solid var(--border);background:var(--panel2);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  transition:transform .18s var(--ease-spring), color .2s ease, border-color .2s ease, background .2s ease;
+}
+.hint-btn:active{transform:scale(.82) rotate(-8deg);}
+.hint-btn.used{color:var(--accent);border-color:var(--accent);}
+.hint-pane{
+  display:grid;grid-template-rows:0fr;
+  margin-top:11px;margin-left:38px;
+  opacity:0;
+  transition:grid-template-rows .32s var(--ease-out), opacity .28s ease;
+}
+.hint-pane.open{grid-template-rows:1fr;opacity:1;}
+.hint-pane-inner{
+  min-height:0;overflow:hidden;
+  padding:10px 12px;
+  background:var(--panel2);border-left:2px solid var(--accent);border-radius:6px;
+  font-size:12px;color:var(--muted);line-height:1.55;
+}
+.assist-tag{
+  font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  margin-left:38px;margin-top:5px;
+  max-height:0;opacity:0;overflow:hidden;
+  transition:max-height .25s var(--ease-out), opacity .25s ease, margin-top .25s ease;
+}
+.sub-row.state-1 .assist-tag{max-height:20px;opacity:1;}
+
+.empty-state{
+  text-align:center;padding:50px 20px;color:var(--muted);font-size:13px;
+}
+
+.footer-note{
+  text-align:center;color:var(--muted2);font-size:10.5px;padding:24px 0 8px;line-height:1.6;
+}
+
+/* rings */
+svg.ring-svg{display:block;}
+.ring-track{fill:none;stroke:var(--border);}
+.ring-fill{fill:none;stroke-linecap:round;transition:stroke-dashoffset .65s var(--ease-out);}
+
+/* shared entrance animation for cards/rows */
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(14px) scale(.97);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+
+/* view transitions between screens */
+#app.view-out{opacity:0;}
+#app.view-in{opacity:1;}
+
+::-webkit-scrollbar{width:0;height:0;}
+
+@media (min-width:520px){
+  .stat-strip{gap:14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-orbs" aria-hidden="true"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+<div id="app"></div>
+
+<script>
+/* enables :active CSS states reliably on iOS/Android WebView touch */
+document.addEventListener('touchstart', function(){}, {passive:true});
+
+/* ================= STORAGE (sandbox-safe) ================= */
+const Store = (function(){
+  let ok = true, mem = {};
+  try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); } catch(e){ ok = false; }
+  return {
+    get(k, d){
+      try{
+        const v = ok ? localStorage.getItem(k) : mem[k];
+        return v ? JSON.parse(v) : d;
+      }catch(e){ return d; }
+    },
+    set(k, v){
+      try{
+        const s = JSON.stringify(v);
+        if(ok){ localStorage.setItem(k, s); } else { mem[k] = s; }
+      }catch(e){}
+    }
+  };
+})();
+
+const KEY = 'surface_v1';
+let STATE = Store.get(KEY, { items:{}, meta:{} });
+function persist(){ Store.set(KEY, STATE); }
+
+/* ================= DATA =================
+   Each chapter: [ "Chapter Name", [ ["Subtopic", "Hint / gist"], ... ] ]
+*/
+const DATA = {"Physics":[["Units, Dimensions & Errors",[["Dimensional formula derivation","Base units combo (M,L,T...) used to derive a formula; check equation homogeneity from it."],["Principle of homogeneity","Both sides of a valid equation must have the same dimensions — use it to verify or derive relations."],["Dimensional analysis to derive formulas","Assume a power relation, match dimensions on both sides to solve for the unknown exponents."],["Limitations of dimensional analysis","Cannot find dimensionless constants; fails for trig/log/exponential terms or sums of dissimilar terms."],["Significant figures rules","Rules for counting sig figs in measured numbers; operations preserve the least precise value."],["Error propagation in operations","Sum/difference adds absolute errors; product/quotient adds relative (percentage) errors."],["Least count of instruments","LC = value of one main-scale division / total vernier divisions; remember zero-error correction."]]],["Vectors",[["Unit vectors and direction cosines","î, ĵ, k̂ have magnitude 1; direction cosines satisfy l²+m²+n² = 1."],["Vector addition — triangle & parallelogram law","Resultant magnitude uses the cosθ formula; direction from the tanθ formula."],["Resolution of vectors into components","Project along axes using cosθ and sinθ of the angle from the axis."],["Dot product and its applications","A.B = ABcosθ; gives work done, projection of one vector on another, and angle between vectors."],["Cross product and its applications","A×B = ABsinθ n̂; gives torque, area, a perpendicular vector — direction by right-hand rule."],["Lami's theorem","For three concurrent, coplanar forces in equilibrium — each force is proportional to the sine of the angle between the other two."],["Condition for coplanar / collinear vectors","Scalar triple product zero means coplanar; cross product zero means collinear/parallel."]]],["Kinematics (1D & 2D, Projectile Motion)",[["Equations of motion","v=u+at, s=ut+½at², v²=u²+2as — derivable from the v-t graph area and slope."],["Graphical interpretation of motion graphs","Slope of x-t graph = velocity; slope of v-t graph = acceleration; area under v-t = displacement."],["Motion under gravity","Sign convention for up/down; time to go up equals time to come down (symmetry)."],["Relative velocity in 1D and 2D","v(A rel. to B) = vA − vB as a vector; classic setting is river-boat / rain-man problems."],["Projectile motion — horizontal & oblique","Range R = u²sin2θ/g, max height H = u²sin²θ/2g, time of flight T = 2usinθ/g."],["Condition for maximum range","Range is maximum at θ=45°; complementary angles (θ and 90°−θ) give the same range."],["Relative motion in projectiles","Vector subtraction of velocities to find the apparent direction seen by a moving observer."]]],["Laws of Motion (NLM + Friction)",[["Newton's three laws and applications","Inertia, F=ma, and action-reaction pairs — remember the pair acts on two different bodies."],["Free body diagrams","Isolate each body, mark every force acting on it, then apply Newton's second law along chosen axes."],["Friction — static, kinetic, angle of friction","f(max static)=μsN, f(kinetic)=μkN; angle of repose tanθ=μ."],["Pulley-block constraint relations","Tension is the same throughout an ideal string; relate accelerations because the string length stays constant."],["Motion on inclined planes with friction","Resolve mg into components along/perpendicular to incline; effective acceleration g(sinθ−μcosθ) down the slope."],["Pseudo force in non-inertial frames","F(pseudo) = −ma(frame), applied opposite to the frame's own acceleration."],["Circular motion connection to NLM","Centripetal force can be friction, tension, or normal reaction; banking of roads gives tanθ = v²/rg."]]],["Work, Energy & Power",[["Work-energy theorem","Work done by the net force on a body equals its change in kinetic energy."],["Conservative vs non-conservative forces","Work done by conservative forces is path-independent; PE is defined only for conservative forces."],["Potential energy — gravitational & spring","U=mgh (gravitational), U=½kx² (spring); relation F = −dU/dx."],["Spring force and elastic PE","Hooke's law F=−kx; elastic potential energy stored U=½kx²."],["Power","P = dW/dt = F.v (instantaneous); average power = total work / total time."],["Conservation of mechanical energy","KE + PE stays constant when only conservative forces do work on the system."],["Vertical circular motion energy conditions","Minimum speed at top v=√(gr); at bottom v=√(5gr) for completing the loop."]]],["Center of Mass, Momentum & Collisions",[["Center of mass of systems","COM = Σmᵢxᵢ/Σmᵢ for discrete masses; use integration for continuous bodies, exploit symmetry when possible."],["Motion of the center of mass","COM moves exactly as if all external force acted there; internal forces never shift it."],["Conservation of linear momentum","Total momentum stays constant with no external force — conserved separately along each axis."],["Impulse-momentum theorem","Impulse equals change in momentum, equals the area under the force-time graph."],["Elastic vs inelastic collisions","KE is conserved only in elastic collisions; only momentum is conserved in inelastic ones."],["Coefficient of restitution","e = (velocity of separation)/(velocity of approach); e=1 perfectly elastic, e=0 perfectly inelastic."],["Variable mass systems — rocket propulsion","Thrust = −v(rel)(dm/dt); leads to the rocket velocity equation with exhaust speed."]]],["Rotational Motion",[["Moment of inertia of standard bodies","Memorize I for rod, disc, ring, sphere about different axes — this is the recall backbone of the chapter."],["Parallel and perpendicular axis theorems","I(parallel) = Icm + Md²; perpendicular axis: Iz = Ix + Iy, only for planar laminas."],["Torque and rotational equilibrium","τ = r×F = Iα; net torque is zero for rotational equilibrium."],["Angular momentum and its conservation","L = Iω is conserved when net external torque is zero — classic ice-skater / spinning-stool problems."],["Rolling motion — pure rolling condition","v = Rω for rolling without slipping; combines translational and rotational kinetic energy."],["Kinetic energy of rolling bodies","KE = ½mv² + ½Iω²; radius of gyration K defined by I = mK²."],["Angular impulse and torque-time graphs","Angular impulse = ΔL = area under the torque-time graph."]]],["Gravitation",[["Newton's law of gravitation","F = Gm₁m₂/r² — always attractive, G is the universal gravitational constant."],["Variation of g with height, depth, rotation","g decreases with height (1−2h/R) and depth (1−d/R); also varies with latitude due to Earth's rotation."],["Gravitational potential energy","U = −GMm/r; the negative sign reflects a bound system, work done to move a mass equals ΔU."],["Escape velocity and orbital velocity","ve = √(2gR), vo = √(gR) = ve/√2; escape velocity is independent of the escaping mass."],["Kepler's three laws","Elliptical orbits, equal areas swept in equal times, and T² ∝ a³."],["Satellite motion and geostationary orbits","Geostationary period = 24 hr, fixed orbital radius, orbit lies in the equatorial plane."],["Binding energy of a satellite","Total energy = −GMm/2r; binding energy is the positive of that, +GMm/2r."]]],["Elasticity (Mechanical Properties of Solids)",[["Stress-strain curve regions","Elastic limit, yield point, ultimate stress, fracture point — Hooke's law holds only in the initial linear region."],["Young's, bulk, and shear modulus","Y = stress/strain for length change, K for volume change, η (rigidity) for shape change."],["Poisson's ratio","Ratio of lateral strain to longitudinal strain; theoretical range is −1 to 0.5."],["Elastic potential energy in a stretched wire","U = ½ × stress × strain × volume = ½FΔL/L."],["Thermal stress in constrained rods","Stress = YαΔT when thermal expansion is prevented by fixed supports."],["Series/parallel combination of wires or springs","Effective Y or spring constant k combines like resistors — check which combination behaves like series vs parallel."]]],["Fluid Mechanics",[["Pascal's law","Pressure applied to an enclosed fluid is transmitted equally in all directions — basis of hydraulic systems."],["Pressure variation with depth","P = P0 + ρgh; same pressure exists at the same horizontal level in a connected fluid."],["Archimedes' principle and buoyancy","Buoyant force equals the weight of displaced fluid; floating requires ρ(body) < ρ(fluid)."],["Equation of continuity","A₁v₁ = A₂v₂ — conservation of mass flow rate for an incompressible fluid."],["Bernoulli's theorem and applications","P + ½ρv² + ρgh = constant along a streamline; explains venturimeter, Torricelli's law, and lift."],["Viscosity and Stokes' law","F = 6πηrv gives the viscous drag; used to find terminal velocity of a sphere in a fluid."],["Surface tension and capillary rise","h = 2Tcosθ/ρgr; excess pressure inside a drop is 2T/r, inside a bubble is 4T/r."]]],["Thermal Properties & Calorimetry",[["Thermal expansion — linear, area, volume","l = l0(1+αΔT); relation β=2α (area) and γ=3α (volume), approximately."],["Specific heat and principle of calorimetry","Heat lost equals heat gained in mixing: m₁s₁ΔT₁ = m₂s₂ΔT₂."],["Change of state and latent heat","Q = mL; temperature stays constant during a phase change — read this off a flat region in the heating curve."],["Modes of heat transfer","Conduction via lattice/free electrons, convection via bulk fluid motion, radiation via EM waves (needs no medium)."],["Thermal conductivity and steady state","Rate = KAΔT/L; series/parallel rod combinations behave like resistors for heat flow."],["Newton's law of cooling","Rate of cooling is proportional to the temperature difference from surroundings — exponential decay."],["Wien's law and Stefan-Boltzmann law","λmT = constant (Wien's displacement); E = σT⁴ gives total radiated power for a black body."]]],["Thermodynamics",[["Zeroth and first law","Zeroth: thermal equilibrium is transitive. First: ΔQ = ΔU + ΔW, energy conservation for a gas."],["Types of thermodynamic processes","Isothermal (T const), adiabatic (Q=0), isobaric (P const), isochoric (V const) — each has its own PV relation."],["Work done in different processes","Equals the area under the P-V curve; the formula changes depending on which process it is."],["Adiabatic process relations","PVγ = constant, TVγ⁻¹ = constant; no heat exchange with surroundings, γ = Cp/Cv."],["Cp, Cv relation — Mayer's formula","Cp − Cv = R; γ depends on the gas's degrees of freedom."],["Second law and entropy","Heat flows spontaneously from hot to cold; entropy of an isolated system never decreases."],["Carnot engine and efficiency","η = 1 − T2/T1 — the maximum possible efficiency between two temperatures, for a reversible engine."]]],["Kinetic Theory of Gases",[["Kinetic theory postulates and pressure formula","P = ⅓ρ(vrms)² — derived from molecular momentum transfer on the container walls."],["rms, average, most probable speed","vrms=√(3RT/M), vavg=√(8RT/πM), vmp=√(2RT/M) — remember the relative ordering."],["Maxwell-Boltzmann speed distribution","Shows the spread of molecular speeds; the peak shifts and broadens as temperature increases."],["Degrees of freedom and specific heats","f=3 for monatomic, 5 (or 7) for diatomic; Cv=fR/2, Cp=(f+2)R/2."],["Law of equipartition of energy","Each degree of freedom carries ½kT of energy per molecule at equilibrium."],["Mean free path","Average distance between collisions; λ = 1/(√2πd²n), inversely related to number density."],["Real gas behavior — van der Waals equation","Correction terms for finite molecular volume (b) and intermolecular attraction (a); explains deviation from ideal gas."]]],["Oscillations (SHM)",[["Conditions for SHM and equation of motion","Restoring force ∝ −displacement; a = −ω²x gives x = A sin(ωt+φ)."],["Phase relationships in SHM","Displacement, velocity, and acceleration are mutually out of phase by 90° and 180° in SHM."],["Energy in SHM","KE = ½mω²(A²−x²), PE = ½mω²x², total energy stays constant at ½mω²A²."],["Simple pendulum time period","T = 2π√(l/g) — independent of mass and (for small angles) amplitude."],["Spring-block SHM combinations","T = 2π√(m/k); effective k for series/parallel springs combines opposite to how resistors combine."],["Angular SHM and physical pendulum","T = 2π√(I/mgl) for a compound pendulum; torsional pendulum T = 2π√(I/k)."],["Damped and forced oscillations, resonance","Amplitude decays exponentially when damped; resonance occurs when driving frequency matches natural frequency."]]],["Waves & Sound",[["Wave equation and its parameters","y = A sin(ωt−kx); relation v = fλ = ω/k connects speed, frequency, and wavelength."],["Speed of waves in different media","v=√(T/μ) for a string; v=√(γP/ρ) for sound in a gas."],["Superposition and interference of waves","Resultant amplitude depends on path/phase difference — constructive vs destructive interference."],["Standing waves and normal modes","Formed by two identical waves traveling in opposite directions; nodes have zero displacement, antinodes maximum."],["Vibrations in strings and organ pipes","String, both ends fixed: f = nv/2L. Open pipe: all harmonics. Closed pipe: only odd harmonics."],["Beats phenomenon","Beat frequency equals the difference of two close frequencies — the basis of tuning instruments."],["Doppler effect","Apparent frequency shifts with relative motion of source/observer — get the sign convention right for each case."]]],["Electrostatics",[["Coulomb's law and superposition","F = kq₁q₂/r²; net force from multiple charges is the vector sum of individual forces."],["Electric field — point charge, dipole, continuous bodies","E = kq/r² for a point charge; dipole field differs on axial vs equatorial line; integrate for rods/rings/discs."],["Gauss's law and applications","Flux = q(enclosed)/ε0 — powerful for symmetric charge distributions like spheres, cylinders, and infinite sheets."],["Field/potential due to a charged sphere","Inside a conductor, E=0; inside a uniformly charged non-conductor, E ∝ r."],["Electric potential and potential energy","V = kq/r; work done = qΔV; relation E = −dV/dr."],["Equipotential surfaces","Always perpendicular to field lines; no work is done moving a charge along one."],["Dipole in uniform / non-uniform field","Torque = pEsinθ, potential energy = −pEcosθ; net force is zero only in a uniform field."]]],["Capacitance",[["Capacitance of standard geometries","C = ε0A/d for parallel plates; separate formulas exist for spherical and cylindrical capacitors."],["Series and parallel combination","Series: 1/C = Σ1/Cᵢ. Parallel: C = ΣCᵢ — opposite pattern to resistors."],["Energy stored in a capacitor","U = ½CV² = ½QV = Q²/2C."],["Effect of a dielectric","Capacitance increases by factor K (dielectric constant); the field inside the dielectric decreases."],["Force between capacitor plates","F = Q²/2Aε0 — matters when deciding whether battery stays connected during dielectric insertion."],["Common potential on connecting capacitors","V = (C₁V₁+C₂V₂)/(C₁+C₂); charge redistributes and energy is lost as heat."],["Charging/discharging through a resistor","Exponential growth or decay of charge/current; time constant τ = RC."]]],["Current Electricity",[["Ohm's law and resistivity","V = IR; resistivity ρ depends on material and temperature, R = ρL/A."],["Series and parallel combination of resistors","Series: R = ΣRᵢ. Parallel: 1/R = Σ1/Rᵢ."],["EMF, internal resistance, terminal voltage","V = E − Ir; terminal voltage drops below EMF as current is drawn, due to internal resistance."],["Kirchhoff's laws","KCL: current is conserved at a junction. KVL: energy is conserved around a loop."],["Wheatstone bridge and meter bridge","Balanced condition P/Q = R/S; principle relies on zero (null) galvanometer deflection."],["Potentiometer principle","Potential gradient stays constant along the wire; used to compare EMFs or measure internal resistance via a null point."],["Heating effects and electrical power","P = VI = I²R = V²/R — Joule's law of heating."]]],["Magnetic Effects of Current",[["Biot-Savart law","dB = (μ0/4π)(Idl×r̂)/r² — used to find the field due to a current element."],["Field due to wire, loop, solenoid","B = μ0I/2πr (straight wire), μ0I/2R (loop center), μ0nI (long solenoid) — memorize these three."],["Ampere's circuital law","∮B.dl = μ0I(enclosed) — powerful shortcut for symmetric current distributions."],["Force on a current-carrying conductor","F = BIL sinθ; direction from the right-hand rule or Fleming's left-hand rule."],["Force between two parallel wires","Attractive if currents flow the same direction; F/L = μ0I₁I₂/2πd."],["Motion of a charged particle in a magnetic field","Circular path with r = mv/qB; helical path if velocity has a component parallel to B."],["Torque on a current loop","τ = m×B = NIA×B — basis of the moving-coil galvanometer."]]],["Magnetism & Matter",[["Bar magnet as an equivalent solenoid","Magnetic moment m = NIA; field along the axis follows a form similar to an electric dipole."],["Field due to a bar magnet — axial/equatorial","B(axial) = μ0(2m)/4πr³; B(equatorial) = μ0m/4πr³ — exactly half of the axial value."],["Gauss's law in magnetism","Net magnetic flux through any closed surface is always zero — there are no magnetic monopoles."],["Earth's magnetism","Declination (angle between geographic and magnetic meridian), inclination/dip, and tanθ = Bv/Bh."],["Dia, para, ferromagnetic materials","Differ in sign/magnitude of susceptibility and behavior in an external field; ferromagnets lose ordering above Curie temperature."],["Hysteresis curve","Retentivity and coercivity read off the loop; area of the loop equals energy lost per cycle."]]],["EMI & AC",[["Faraday's and Lenz's laws","EMF = −dΦ/dt; the induced current always opposes the change causing it (energy conservation)."],["Motional EMF","EMF = Bvl for a rod moving through a field — derivable from the force on free charges in it."],["Self and mutual inductance","L = NΦ/I; mutual inductance M links flux between two coils; energy stored = ½LI²."],["LR, LC, LCR transient behavior","Current grows/decays with time constant L/R in LR circuits; LC circuits oscillate with no resistance."],["AC voltage/current — RMS and average values","Vrms = V0/√2; average current over a half cycle = 2I0/π."],["Impedance and phasor diagrams","Z = √(R²+(XL−XC)²); phase angle tanφ = (XL−XC)/R."],["Resonance and power factor in LCR","Resonance occurs when XL = XC, giving ω0 = 1/√(LC); power factor = cosφ = R/Z."]]],["EM Waves",[["Displacement current and Maxwell's equations","Maxwell added displacement current, id = ε0(dΦE/dt), to fix an inconsistency in Ampere's law."],["Properties of electromagnetic waves","Transverse waves; E and B are perpendicular to each other and to the direction of propagation, speed c in vacuum."],["Electromagnetic spectrum","Order of wavelengths from radio waves to gamma rays — know the typical uses of each band."],["Energy and momentum of EM waves","Energy density u = ε0E²; intensity is the average Poynting vector; momentum p = U/c."]]],["Ray Optics",[["Reflection and mirror formula","1/v + 1/u = 1/f, with Cartesian sign convention; magnification m = −v/u."],["Refraction and Snell's law","n₁sinθ₁ = n₂sinθ₂; refractive index = c/v; use it for apparent depth problems."],["Total internal reflection","Occurs going from denser to rarer medium when the angle exceeds the critical angle, sinθc = 1/n."],["Lens formula and lens maker's equation","1/v − 1/u = 1/f; 1/f = (n−1)(1/R₁ − 1/R₂)."],["Combination of lenses/mirrors","Power P = 1/f (in metres); net power for lenses in contact is simply the sum, Pnet = ΣPᵢ."],["Prism and dispersion of light","Deviation δ = (i₁+i₂) − A; minimum deviation condition gives a clean symmetric ray path."],["Optical instruments","Magnifying power formulas for the compound microscope and astronomical telescope; resolving power depends on aperture."]]],["Wave Optics",[["Huygens' principle","Every point on a wavefront acts as a source of secondary wavelets — explains reflection and refraction."],["Interference and coherence conditions","Sources must be coherent (constant phase relationship) to produce a sustained interference pattern."],["Young's double slit experiment","Fringe width β = λD/d; bright/dark fringe conditions depend on the path difference."],["Diffraction — single slit","Minima condition a sinθ = nλ; the central maximum is twice as wide as any secondary maximum."],["Polarization of light","Only transverse waves can be polarized; Malus's law I = I0cos²θ; Brewster's angle gives fully polarized reflection."],["Resolving power and diffraction limit","Limits how finely an optical instrument can distinguish two close points — governed by the Rayleigh criterion."]]],["Modern Physics (Photoelectric Effect, Dual Nature, Atomic Structure)",[["Photoelectric effect and Einstein's equation","KEmax = hν − φ; involves stopping potential and a well-defined threshold frequency."],["Work function and threshold frequency","Minimum energy needed to eject an electron; φ = hν0, and it's a material-dependent property."],["de Broglie wavelength","λ = h/p = h/mv — wave nature applies to all matter, not just light."],["Heisenberg uncertainty principle","ΔxΔp ≥ h/4π — a fundamental limit on knowing position and momentum simultaneously."],["Bohr's model of the hydrogen atom","Quantized angular momentum L = nh/2π; energy levels En = −13.6/n² eV."],["Hydrogen spectrum series","1/λ = R(1/n₁² − 1/n₂²) — identify the series (Lyman, Balmer, etc.) by the final energy level."],["X-ray production and spectrum","Continuous (braking radiation) vs characteristic (electron transition) spectrum; Moseley's law relates frequency to atomic number."]]],["Nuclear Physics",[["Nuclear composition and mass defect","Mass defect = sum of nucleon masses − actual nucleus mass; converts to binding energy via E = mc²."],["Binding energy per nucleon curve","Peaks near iron — explains why heavy nuclei release energy on fission, light nuclei on fusion."],["Radioactive decay law","N = N0e^(−λt); half-life T = 0.693/λ; activity A = λN."],["Alpha, beta, gamma decay","Alpha = He nucleus emission, beta = electron/positron emission — track how mass number and charge change in each."],["Nuclear reactions and Q-value","Q = (mass before − mass after)c²; a positive Q means energy is released in the reaction."],["Nuclear fission and fusion","Fission splits a heavy nucleus releasing energy; fusion combines light nuclei — the sun's energy source."]]],["Semiconductors",[["Energy bands in solids","Band gap size classifies a material as conductor, insulator, or semiconductor (small gap)."],["p-type and n-type semiconductors","Doping with trivalent (acceptor, p-type) or pentavalent (donor, n-type) impurities."],["p-n junction diode and depletion region","Forms at the junction with a barrier potential; behaves very differently under forward vs reverse bias."],["Diode as rectifier","Half-wave and full-wave rectification convert AC to DC — compare their ripple factors."],["Zener diode as voltage regulator","Operates in reverse breakdown to maintain a constant voltage across a load."],["Transistor characteristics and configurations","CE, CB, CC configurations; current gain relations between α and β."],["Logic gates","Truth tables for AND, OR, NOT, NAND, NOR, XOR — remember NAND and NOR are universal gates."]]]],"Chemistry":[["Mole Concept & Stoichiometry",[["Mole concept and Avogadro number","1 mole = 6.022×10²³ particles; molar mass in grams equals the numerical atomic/molecular mass."],["Empirical and molecular formula","Empirical formula comes from mass %; molecular formula = empirical × n, where n = molecular mass/empirical mass."],["Concentration terms","Molarity M = moles/volume(L); molality m = moles/mass of solvent(kg) — molality is temperature-independent."],["Density-molarity-molar mass relation","A single relation links density, molarity, and molar mass of a solution — useful for solution problems."],["Limiting reagent concept","The reactant that runs out first — it determines the maximum amount of product that can form."],["Stoichiometric calculations and % yield","% yield = actual yield/theoretical yield × 100 — compare against the balanced equation."],["Equivalent weight and normality","Equivalent weight = molar mass / n-factor; Normality = Molarity × n-factor."]]],["Atomic Structure",[["Photoelectric effect and Planck's quantum theory","E = hν; energy is quantized — this is what classical wave theory could not explain."],["Bohr's model and its postulates","Quantized orbits and energy levels; explains hydrogen well but fails for multi-electron atoms."],["de Broglie and Heisenberg — quantum model basis","Wave-particle duality and the uncertainty principle are why the classical fixed-orbit picture breaks down."],["Quantum numbers (n, l, m, s)","Principal (shell), azimuthal (subshell/shape), magnetic (orientation), spin — know the allowed range for each."],["Shapes of s, p, d orbitals","s is spherical, p is dumbbell-shaped (3 orientations), d mostly has 4 lobes — note nodal planes."],["Aufbau, Pauli, Hund's rules","Fill by increasing energy; no two electrons share all four quantum numbers; max multiplicity in degenerate orbitals."],["Electronic configuration and exceptions","Exceptions like Cr, Cu arise from the extra stability of half-filled/fully-filled subshells."]]],["Gaseous State",[["Ideal gas equation and gas laws","PV = nRT combines Boyle's, Charles's, and Avogadro's laws into one equation."],["Dalton's law of partial pressures","Total pressure = sum of partial pressures; mole fraction × total pressure = partial pressure."],["Graham's law of diffusion","Rate of diffusion ∝ 1/√(molar mass) — used to compare how fast two gases effuse."],["Kinetic theory postulates","Molecules treated as point masses, no intermolecular forces, perfectly elastic collisions — the ideal-gas assumptions."],["Van der Waals equation","(P + an²/V²)(V − nb) = nRT — corrects for finite molecular volume and intermolecular attraction."],["Critical constants and compressibility factor","Z = PV/nRT; Z=1 for an ideal gas, deviations show up at high pressure/low temperature."]]],["Chemical Thermodynamics",[["First law of thermodynamics","ΔU = q + w — watch the sign convention for heat absorbed and work done on/by the system."],["Enthalpy and Hess's law","ΔH = ΔU + ΔnRT; enthalpy is a state function, so reaction enthalpies can simply be added."],["Enthalpy of formation, combustion, neutralization","Standard values used to calculate an unknown reaction's enthalpy indirectly, via Hess's law."],["Bond enthalpy calculations","ΔH(reaction) = Σ(bonds broken) − Σ(bonds formed)."],["Entropy and spontaneity","ΔS(universe) > 0 for a spontaneous process — entropy is a measure of disorder."],["Gibbs free energy criterion","ΔG = ΔH − TΔS; a negative ΔG means the process is spontaneous at that temperature."],["Third law of thermodynamics","A perfect crystal at 0 K has zero entropy — this gives the basis for absolute entropy values."]]],["Chemical Equilibrium",[["Law of mass action and equilibrium constant","Kc/Kp expressions come from the balanced equation; only species in the same phase as the equilibrium matter."],["Relation between Kp and Kc","Kp = Kc(RT)^Δn, where Δn = moles of gaseous products − gaseous reactants."],["Reaction quotient Q vs K","Q<K means the reaction proceeds forward; Q>K means it goes in reverse; Q=K at equilibrium."],["Le Chatelier's principle","A system at equilibrium shifts to counteract any imposed change in concentration, pressure, or temperature."],["Effect of catalyst, temperature, pressure","A catalyst never shifts equilibrium — it only speeds up how fast equilibrium is reached."],["Degree of dissociation","α relates initial and equilibrium concentrations — commonly used with the vapor density method."]]],["Ionic Equilibrium",[["Arrhenius, Bronsted-Lowry, Lewis theories","Proton donor/acceptor defines Bronsted-Lowry acids/bases; Lewis extends it to electron pair acceptor/donor."],["pH and pOH calculations","pH = −log[H⁺]; pH + pOH = 14 at 25°C."],["Ostwald's dilution law","Ka = Cα² for a weak electrolyte — the approximation holds well when α is small."],["Common ion effect","Adding a common ion suppresses the dissociation of a weak electrolyte, shifting the equilibrium."],["Buffer solutions — Henderson-Hasselbalch equation","pH = pKa + log([salt]/[acid]) — buffers resist pH change on dilution or small additions."],["Hydrolysis of salts","Salt of a weak acid + strong base is basic in solution, and vice versa — driven by the hydrolysis constant."],["Solubility product Ksp and precipitation","Ksp expression follows from stoichiometry; precipitation occurs when Qsp exceeds Ksp."]]],["Electrochemistry",[["Electrode potential and EMF of a cell","E°cell = E°cathode − E°anode, measured against the standard hydrogen electrode reference."],["Nernst equation","E = E° − (RT/nF)lnQ — relates cell potential to the actual concentrations, not just standard state."],["Conductivity and Kohlrausch's law","Molar conductivity increases on dilution; Kohlrausch's law gives the limiting value for weak electrolytes."],["Electrolysis and Faraday's laws","Mass deposited is proportional to charge passed (1st law) and to equivalent weight (2nd law)."],["Types of cells","Galvanic (spontaneous) vs electrolytic (non-spontaneous) reactions; know common battery/fuel cell reactions."],["Corrosion and its prevention","An electrochemical process; prevented via sacrificial anode, protective coating, or alloying."]]],["Chemical Kinetics",[["Rate of reaction and rate law","Rate = k[A]^m[B]^n — the order must come from experiment, never assumed from stoichiometry."],["Order and molecularity","Order can be fractional or zero; molecularity is always a whole number and applies only to elementary steps."],["Integrated rate equations","First order: t½ = 0.693/k, independent of concentration. Zero order: t½ = [A]0/2k."],["Half-life dependence on order","How half-life depends on initial concentration changes with the order of the reaction — a key distinguishing test."],["Collision theory","Effective collisions need both proper orientation and energy at least equal to the activation energy."],["Arrhenius equation and activation energy","k = Ae^(−Ea/RT); plotting lnk vs 1/T gives Ea from the slope."],["Catalysis and rate","A catalyst lowers activation energy via an alternate pathway, without changing the overall ΔH."]]],["Solutions & Colligative Properties",[["Types of solutions and Henry's law","Gas solubility ∝ partial pressure: p = KH × mole fraction."],["Raoult's law for ideal solutions","Partial vapor pressure = mole fraction × pure component's vapor pressure; deviations signal non-ideal behavior."],["Relative lowering of vapor pressure","(P0−Ps)/P0 = mole fraction of solute, for a dilute solution."],["Elevation in boiling point, depression in freezing point","ΔTb = Kbm, ΔTf = Kfm — ebullioscopic and cryoscopic constants respectively."],["Osmotic pressure","π = CRT; isotonic solutions have equal osmotic pressure."],["Van't Hoff factor","i = observed colligative property / calculated value; i>1 means dissociation, i<1 means association."]]],["Surface Chemistry",[["Physisorption vs chemisorption","Physisorption is weak and reversible; chemisorption is strong and irreversible — they differ in enthalpy magnitude."],["Freundlich adsorption isotherm","x/m = kP^(1/n) — an empirical relation between amount adsorbed and pressure."],["Catalysis types","Homogeneous (same phase as reactants) vs heterogeneous (different phase); enzyme catalysis is highly specific."],["Colloids — types and properties","Dispersed phase + dispersion medium; recognized by Tyndall effect, Brownian motion, and electrophoresis."],["Coagulation and Hardy-Schulze rule","Higher charge on the coagulating ion gives greater coagulating power."],["Emulsions and micelles","Oil-water mixtures stabilized by emulsifiers; micelles form only above the critical micelle concentration (CMC)."]]],["Periodic Table & Periodicity",[["Modern periodic law","Properties are a periodic function of atomic number; elements arranged by increasing atomic number."],["Effective nuclear charge — Slater's rules","Shielding by inner electrons reduces the effective charge felt by outer electrons."],["Periodic trends","Atomic radius, ionization energy, electron affinity, electronegativity — know the general trend and the key exceptions."],["Exceptions in ionization energy trends","Be>B and N>O — arise from the extra stability of filled/half-filled subshells."],["Anomalous properties of second period elements","Small size drives unusual behavior compared to the rest of their group."],["Diagonal relationship","Li-Mg, Be-Al, B-Si show similar properties due to comparable charge-to-size ratios."]]],["Chemical Bonding",[["Ionic bond and lattice energy","Electrostatic attraction between ions; lattice energy depends on ionic charge and size (Born-Haber cycle)."],["Covalent bond and VSEPR theory","Electron pair repulsion decides molecular geometry; lone pairs repel more strongly than bond pairs."],["Hybridization and molecular shapes","sp, sp², sp³, sp³d etc. determine geometry — cross-check against VSEPR predictions."],["Resonance and formal charge","Delocalized structures; formal charge = valence e⁻ − nonbonding e⁻ − ½ bonding e⁻."],["Dipole moment and bond polarity","Vector sum of individual bond dipoles — can be zero for a symmetric molecule despite polar bonds."],["Molecular orbital theory — bond order","Bond order = ½(bonding − antibonding electrons); predicts stability and magnetic nature."],["Hydrogen bonding","Affects boiling point and solubility strongly; distinguish intermolecular from intramolecular H-bonding."]]],["Coordination Compounds",[["Werner's theory and coordination number","Primary (ionizable) and secondary (coordinate) valency; geometry depends on coordination number."],["IUPAC nomenclature","Ligands named alphabetically before the metal; prefixes count ligands, oxidation state goes in brackets."],["Types of ligands","Denticity (mono, bi, polydentate) is the number of donor atoms binding the metal; chelating ligands form rings."],["Isomerism in coordination compounds","Structural (ionization, linkage, coordination) and stereoisomerism (geometrical, optical)."],["Valence bond theory","Predicts geometry and magnetic behavior through inner vs outer orbital complex formation."],["Crystal field theory (CFT)","d-orbitals split into eg/t2g sets; splitting energy depends on the strength of the ligand field."],["Color and magnetism of complexes","Color arises from d-d transitions; magnetic behavior comes from the number of unpaired electrons predicted by CFT."]]],["s-Block Elements",[["General trends in alkali/alkaline earth metals","Reactivity increases down the group; ionization energy decreases; all form largely ionic compounds."],["Anomalous behavior of Li and Be","Small size and high polarizing power give more covalent character than the rest of their groups."],["Important compounds","NaOH, Na2CO3, CaO, CaCO3 — know their preparation methods and key industrial reactions."],["Solvay process","Produces sodium carbonate using NH3, CO2, and brine — recall the key steps and byproducts."],["Biological importance of Na, K, Mg, Ca","Roles in nerve transmission, chlorophyll structure, and bones/teeth respectively."]]],["p-Block Elements (Groups 13-18)",[["Group 13 — boron family","Boron's anomalous behavior, diborane's banana bonds, aluminum's amphoteric character."],["Group 14 — carbon family","Catenation ability decreases down the group; note carbon's allotropes and the trend toward +2 over +4 states."],["Group 15 — nitrogen family","Oxidation states, basicity trend of hydrides, and the oxoacids of nitrogen and phosphorus."],["Group 16 — oxygen family","Allotropes of sulfur, oxoacids of sulfur, and oxygen's anomalous behavior versus the rest of the group."],["Group 17 — halogens","Oxidizing power trend down the group, oxoacids of chlorine, structures of interhalogen compounds."],["Group 18 — noble gases","Reasons for inertness, and the structures of xenon compounds like XeF2, XeF4, XeF6."],["Anomalous first-member behavior","Small size and absence of d-orbitals make the first member of each group chemically distinct from the rest."]]],["d & f Block Elements",[["General electronic configuration","(n−1)d¹⁻¹⁰ ns⁰⁻² — variable due to the stability of half-filled/fully-filled d-orbitals."],["Variable oxidation states","Multiple oxidation states arise because (n−1)d and ns orbital energies are close."],["Magnetic properties and color","Unpaired d-electrons cause paramagnetism; color comes from d-d electronic transitions."],["Interstitial compounds and alloys","Small atoms (H, C, N) fit into gaps in the metal lattice; similar atomic sizes enable alloy formation."],["Lanthanoid contraction","Poor shielding by f-electrons causes a steady radius decrease — affects the similarity of group 4-6 elements."],["KMnO4 and K2Cr2O7","Preparation methods and their oxidizing behavior — note how the products differ in acidic vs basic medium."]]],["Metallurgy",[["Concentration of ores","Gravity separation, froth flotation, magnetic separation, leaching — the method depends on the ore's properties."],["Extraction of metals — reduction methods","Thermodynamic principle via the Ellingham diagram; carbon reduction, self-reduction, electrolytic reduction."],["Ellingham diagram interpretation","Plot of ΔG° vs T — a metal with a lower line can reduce the oxide of a metal above it."],["Refining methods","Electrolytic refining, zone refining, distillation — choice depends on reactivity and required purity."],["Extraction of iron, copper, aluminum","Blast furnace for iron, electrolytic Hall process for aluminum — know the specific process steps."]]],["Qualitative Analysis (Salt Analysis)",[["Flame test colors","Characteristic flame color gives a quick, preliminary cation identification."],["Group-wise cation analysis scheme","Systematic addition of reagents separates cations into groups I through VI."],["Common ion effect in group separation","Adjusting ion concentration selectively precipitates a specific cation group."],["Confirmatory tests for cations/anions","Specific color changes or precipitates unique to each ion."],["Anion analysis","Dilute acid and concentrated acid tests — gas evolution and observations identify the anion class."]]],["General Organic Chemistry (GOC)",[["IUPAC nomenclature rules","Identify the longest chain and principal functional group; number for lowest locants; apply prefix/suffix rules."],["Electronic effects","Inductive acts through sigma bonds (distance-dependent), resonance through the pi system, hyperconjugation via C-H sigma-pi overlap."],["Reaction intermediates","Carbocation, carbanion, free radical — know the stability order and the factors (hyperconjugation, resonance, induction) behind it."],["Acidity and basicity comparisons","A more stable conjugate base means a stronger acid; electron-withdrawing groups increase acidity."],["Types of organic reactions","Substitution, addition, elimination — classify by which bonds change, then decide the mechanism (SN1/SN2/E1/E2)."],["Isomerism overview","Structural (chain, position, functional, metamerism) vs stereoisomerism (geometrical, optical)."]]],["Isomerism",[["Structural isomerism types","Chain, position, functional group, metamerism — all differ in how the atoms are connected."],["Geometrical isomerism","Restricted rotation around a double bond or ring; use CIP priority rules to assign cis-trans or E-Z."],["Optical isomerism and chirality","A chiral center has four different groups attached; enantiomers rotate plane-polarized light in opposite directions."],["R/S nomenclature","Priority by atomic number of attached atoms; clockwise = R, anticlockwise = S, with lowest priority pointing away."],["Number of stereoisomers","2ⁿ rule for n chiral centers — but meso compounds reduce the count due to internal symmetry."]]],["Hydrocarbons",[["Preparation and properties of alkanes","Wurtz reaction for chain extension; free radical halogenation mechanism; combustion."],["Preparation and properties of alkenes","Elimination reactions (dehydration/dehydrohalogenation); Markovnikov's rule governs addition reactions."],["Markovnikov vs anti-Markovnikov addition","H adds to the carbon with more hydrogens already (Markovnikov); peroxide effect reverses this, but only for HBr."],["Preparation and properties of alkynes","Acetylide formation, addition reactions; hydration follows Markovnikov's rule to give a ketone."],["Aromaticity and Huckel's rule","Planar, cyclic, conjugated, with (4n+2) π electrons — all four conditions are required for aromaticity."],["Electrophilic aromatic substitution mechanism","Goes through an arenium ion intermediate; substituents direct incoming groups ortho-para or meta."],["Ozonolysis","Cleaves a double or triple bond; the products reveal the original alkene/alkyne's structure."]]],["Haloalkanes & Haloarenes",[["SN1 vs SN2 mechanisms","SN1: two-step via carbocation, racemization, favored by 3° substrate. SN2: one-step backside attack, inversion, favored by 1°."],["Factors affecting substitution rate","Substrate structure, nucleophile strength, solvent, and leaving group ability all matter."],["Elimination reactions and Zaitsev's rule","E1/E2 mechanisms; the more substituted (more stable) alkene is usually the major product."],["Grignard reagent","RMgX forms from a haloalkane + Mg in dry ether; reacts readily with carbonyl compounds."],["Reactivity — haloarenes vs haloalkanes","Haloarenes are far less reactive due to resonance giving the C-X bond partial double-bond character."]]],["Alcohols, Phenols & Ethers",[["Preparation of alcohols","From Grignard reagents, reduction of carbonyls, or hydroboration-oxidation of alkenes."],["Lucas test","Distinguishes 1°, 2°, 3° alcohols by reaction rate with Lucas reagent (3° reacts fastest)."],["Dehydration of alcohols","Acid-catalyzed E1 mechanism to give an alkene; Zaitsev product is the major one."],["Acidity — phenols vs alcohols","Phenoxide ion is resonance-stabilized, making phenol noticeably more acidic than a simple alcohol."],["Reactions of phenols","OH is a strong activating, ortho-para directing group; Kolbe's reaction gives salicylic acid."],["Williamson ether synthesis","SN2 reaction of an alkoxide with an alkyl halide — works best with primary halides."]]],["Aldehydes & Ketones",[["Nucleophilic addition reactions","Aldehydes are more reactive than ketones due to less steric/electronic hindrance around the carbonyl."],["Distinguishing tests","Tollens' reagent gives a silver mirror (aldehydes); Fehling's gives a brick-red precipitate (aliphatic aldehydes)."],["Aldol condensation","Carbonyl compounds with alpha-hydrogens self-condense under base catalysis to form a beta-hydroxy carbonyl."],["Cannizzaro reaction","Disproportionation of an aldehyde with no alpha-hydrogen, under strong base."],["Haloform reaction","Methyl ketones and acetaldehyde give a positive iodoform test — a yellow precipitate used for identification."],["Clemmensen and Wolff-Kishner reduction","Both reduce C=O all the way to CH2 — acidic conditions vs basic conditions respectively."]]],["Carboxylic Acids & Derivatives",[["Preparation methods","Oxidation of primary alcohols/aldehydes, or hydrolysis of nitriles and esters."],["Acidity and substituent effects","Carboxylate is resonance-stabilized; electron-withdrawing groups on the chain further increase acidity."],["HVZ reaction","Hell-Volhard-Zelinsky: alpha-halogenation of a carboxylic acid using red phosphorus and a halogen."],["Ester formation and hydrolysis","Fischer esterification is acid-catalyzed and reversible; saponification is base hydrolysis and irreversible."],["Acid chloride and anhydride reactions","Highly reactive acyl derivatives, commonly used as intermediates to make esters and amides."]]],["Amines",[["Preparation methods","Gabriel synthesis gives pure primary amines; reduction of nitriles, nitro compounds, or amides also works."],["Basicity of amines","Depends on electron density on N, steric hindrance, and solvation — the order can flip between gas phase and water."],["Hofmann bromamide degradation","Converts an amide into a primary amine that has one fewer carbon."],["Diazonium salt formation","Formed from a primary aromatic amine with NaNO2/HCl at low temperature — a very versatile synthetic intermediate."],["Distinguishing amine classes — Hinsberg test","Reaction with benzenesulfonyl chloride gives different solubility outcomes for 1°, 2°, 3° amines."]]],["Biomolecules & Polymers",[["Carbohydrates","Classification into mono/di/polysaccharides; structures of glucose and fructose; reducing vs non-reducing sugars."],["Amino acids and proteins","Zwitterion nature of amino acids; peptide bond formation; primary through quaternary protein structure."],["Enzymes and their mechanism","Biological catalysts with high specificity — lock-and-key and induced-fit models explain their action."],["Nucleic acids","Nucleotide components of DNA/RNA, base-pairing rules, double helix vs single strand."],["Types of polymers","Addition vs condensation polymers, classified by their mechanism of formation — know common examples and monomers."],["Vitamins and hormones","Water-soluble vs fat-soluble vitamins and their deficiency diseases — broad overview level."]]],["Practical/Qualitative Organic Analysis",[["Detection of elements — Lassaigne's test","Sodium fusion converts N, S, and halogens into ionic forms that can then be detected."],["Functional group tests","Specific reagent-based tests identify -OH, -CHO, -COOH, -NH2 and other functional groups present."],["Chromatography basics","TLC and column chromatography separate compounds based on differential adsorption/partition between two phases."],["Crystallization and distillation","Purification methods based on differences in solubility and boiling point respectively."]]]],"Maths":[["Sets, Relations & Functions",[["Set operations","Union, intersection, complement, and De Morgan's laws for combining and negating sets."],["Relations — reflexive, symmetric, transitive, equivalence","Know each property's definition; an equivalence relation partitions a set into disjoint equivalence classes."],["Types of functions","Injective (one-one), surjective (onto), bijective (both) — bijective functions are exactly the ones that are invertible."],["Composition and inverse of functions","(fog)(x) = f(g(x)); an inverse function exists only when the original is bijective."],["Domain and range","Restrictions come from denominators, even roots, log arguments, and trig function domains."],["Even, odd, periodic functions","f(−x)=f(x) is even, f(−x)=−f(x) is odd — recall the periods of standard trig and other functions."]]],["Complex Numbers",[["Algebra of complex numbers","i² = −1; the conjugate of a+bi flips only the sign of the imaginary part."],["Modulus, argument, polar form","|z| = √(a²+b²); argument = tan⁻¹(b/a) with a quadrant check; z = r(cosθ+isinθ)."],["De Moivre's theorem","(cosθ+isinθ)ⁿ = cos(nθ)+isin(nθ) — used for powers and roots of complex numbers."],["Cube roots of unity","1, ω, ω² with 1+ω+ω²=0 and ω³=1 — a very common shortcut identity."],["nth roots of unity","n distinct roots equally spaced on the unit circle; they sum to zero."],["Geometrical interpretation (locus problems)","|z−z1|=k traces a circle; arg(z−z1)=constant traces a ray from z1."]]],["Quadratic Equations",[["Nature of roots — discriminant","D>0 gives real distinct roots, D=0 real equal roots, D<0 complex conjugate roots."],["Sum and product of roots","Sum = −b/a, product = c/a — lets you form or analyze an equation without solving it fully."],["Quadratic expressions — range, max/min","Parabola opens up or down based on the sign of a; the vertex gives the max or min value."],["Location of roots in an interval","Conditions on f(k)'s sign and the vertex position tell you where the roots lie relative to a given point/interval."],["Common roots of two quadratics","A cross-multiplication method gives the condition for two quadratics to share a root."],["Transformation of equations","Forming a new equation whose roots are some function of the original equation's roots."]]],["Sequences & Series",[["Arithmetic progression","nth term aₙ = a+(n−1)d; sum Sₙ = n/2[2a+(n−1)d]."],["Geometric progression","nth term aₙ = ar^(n−1); sum formula, and S∞ = a/(1−r) for |r|<1."],["Arithmetic-geometric progression (AGP)","For a series where terms are the product of an AP term and a GP term — needs a special summation technique."],["Harmonic progression — AM, GM, HM relations","AM ≥ GM ≥ HM always; reciprocals of an AP form an HP."],["Sum of special series","Standard formulas for Σn, Σn², Σn³ — the sum of the first n natural numbers, squares, cubes."],["Method of differences","Used when a direct AP/GP formula doesn't apply — a telescoping technique for finding the nth term or sum."]]],["Permutations & Combinations",[["Fundamental principle of counting","Multiplication principle for sequential choices, addition principle for either/or choices."],["Permutations","ⁿPᵣ formula; special care needed for repetition allowed, and for circular permutations = (n−1)!."],["Combinations and their properties","ⁿCᵣ formula; ⁿCᵣ = ⁿC₍ₙ₋ᵣ₎; Pascal's rule ⁿCᵣ + ⁿC₍ᵣ₋₁₎ = ⁿ⁺¹Cᵣ."],["Permutations of non-distinct objects","n!/(p1!p2!...) when some objects repeat."],["Division and distribution into groups","Formulas differ depending on whether the groups and the objects are identical or distinct."],["Derangements","Counts the number of ways none of the objects end up in their original position."]]],["Binomial Theorem",[["Binomial expansion and general term","(x+y)ⁿ expansion; general term Tᵣ₊₁ = ⁿCᵣ x^(n−r) yʳ."],["Middle term(s)","A single middle term if n is even; two middle terms if n is odd."],["Greatest term and greatest coefficient","Use the ratio Tᵣ₊₁/Tᵣ to find the numerically greatest term in the expansion."],["Properties of binomial coefficients","Sum of all coefficients, alternating sum, and other identities relating the ⁿCᵣ terms."],["Multinomial theorem","A generalization of the binomial theorem to expressions with more than two terms."],["Binomial theorem for negative/fractional index","(1+x)ⁿ expansion is valid for |x|<1 when n is not a positive integer."]]],["Matrices & Determinants",[["Types of matrices and operations","Symmetric, skew-symmetric, orthogonal; matrix multiplication is not commutative — order matters."],["Determinant properties and evaluation","Row/column operations and expansion along a row or column — these properties simplify evaluation a lot."],["Adjoint and inverse of a matrix","adj(A) = transpose of the cofactor matrix; A⁻¹ = adj(A)/|A|."],["Solving systems of linear equations","Cramer's rule and the matrix method; the determinant's value tells you unique/infinite/no solution."],["Rank of a matrix","Order of the largest non-zero minor — used to check consistency of a system of equations."],["Cayley-Hamilton theorem","Every square matrix satisfies its own characteristic equation."]]],["Straight Lines",[["Slope of a line and angle between two lines","m = tanθ; angle between two lines tanθ = |(m₁−m₂)/(1+m₁m₂)|."],["Various forms of the line equation","Point-slope, two-point, intercept form — pick the form that matches the given information for the fastest route."],["Distance of a point from a line","|ax₁+by₁+c|/√(a²+b²)."],["Distance between two parallel lines","|c₁−c₂|/√(a²+b²)."],["Condition for concurrency of three lines","The determinant of their coefficients equals zero."],["Family of lines and angle bisectors","L₁+λL₂=0 passes through the intersection of L₁ and L₂; bisector equations use normalized line forms."],["Foot of perpendicular and image of a point","Uses the perpendicular distance formula together with the line's direction ratios."]]],["Circles",[["General equation of a circle","x²+y²+2gx+2fy+c=0, with center (−g,−f) and radius √(g²+f²−c)."],["Equation of a circle from given conditions","Diameter endpoints, tangency conditions, or three points on the circle each give a different construction."],["Position of a point relative to a circle","Substitute the point into the circle's equation — the sign tells you inside, outside, or on the circle."],["Tangent and normal to a circle","Tangency condition: distance from center equals radius; tangent equation via the slope form."],["Condition for two circles to intersect/touch","Compare the distance between centers with the sum/difference of the radii."],["Family of circles","S+λL=0 for a circle through the intersection of a circle and a line; S₁+λS₂=0 for two circles."],["Radical axis and radical center","The line of equal power with respect to two circles, given by S₁−S₂=0."]]],["Parabola",[["Standard equation and parameters","y²=4ax; focus (a,0); directrix x=−a; length of latus rectum = 4a."],["Parametric coordinates","(at², 2at) — very useful for chord and tangent problems."],["Tangent and normal — parametric form","Tangent: ty = x+at²; normal: y+tx = 2at+at³."],["Condition for tangency","For y=mx+c to touch y²=4ax, the condition is c = a/m."],["Focal chord properties","For a focal chord, t₁t₂ = −1; the semi-latus rectum is the harmonic mean of the two segments."]]],["Ellipse",[["Standard equation and parameters","x²/a² + y²/b² = 1; foci at (±ae,0); eccentricity e = √(1−b²/a²)."],["Parametric coordinates","(a cosθ, b sinθ)."],["Tangent and normal — parametric form","Tangent: xcosθ/a + ysinθ/b = 1."],["Condition for tangency","For y=mx+c to touch the ellipse, c² = a²m²+b²."],["Auxiliary circle and eccentric angle","The circle of radius a, concentric with the ellipse, relates a point on the ellipse to a point on the circle."],["Director circle","Locus of points from which perpendicular tangents can be drawn: x²+y² = a²+b²."]]],["Hyperbola",[["Standard equation and parameters","x²/a² − y²/b² = 1; eccentricity e = √(1+b²/a²), always e>1."],["Parametric coordinates","(a secθ, b tanθ) — tangent/normal equations follow a structure similar to the ellipse."],["Condition for tangency","For y=mx+c to touch the hyperbola, c² = a²m² − b²."],["Asymptotes","y = ±(b/a)x — the hyperbola approaches but never touches its asymptotes."],["Conjugate hyperbola","x²/a² − y²/b² = −1 — shares the same asymptotes as the original hyperbola."],["Rectangular hyperbola","The case a=b, with perpendicular asymptotes; equation becomes xy=c² in rotated axes."]]],["Limits, Continuity & Differentiability",[["Standard limit formulas","sinx/x → 1, and standard limits for eˣ, log(1+x) as x→0 — the building blocks for harder limits."],["Indeterminate forms","0/0, ∞/∞, 0×∞, ∞−∞, 1^∞, 0⁰, ∞⁰ — each needs its own technique to resolve."],["Squeeze (sandwich) theorem","Bound a function between two others that share the same limit, to pin down its limit."],["L'Hopital's rule","For 0/0 or ∞/∞ forms, differentiate the numerator and denominator separately and try the limit again."],["Continuity and types of discontinuity","LHL = RHL = f(a) is required for continuity; distinguish removable from non-removable discontinuity."],["Differentiability and its link to continuity","Differentiability implies continuity, but the converse is not always true — e.g. |x| at x=0."]]],["Differentiation",[["Product, quotient, chain rule","The core rules for differentiating combinations and compositions of functions."],["Implicit differentiation","Differentiate both sides with respect to x, treating y as a function of x throughout."],["Parametric differentiation","dy/dx = (dy/dt)/(dx/dt) for a curve defined parametrically."],["Logarithmic differentiation","Take log of both sides first — essential when the variable appears in the exponent, like xˣ."],["Higher order derivatives","Successive differentiation; notation f''(x), f'''(x), and so on."],["Differentiation of inverse trig functions","Standard derivative formulas — often need a substitution first to simplify the expression."]]],["Application of Derivatives",[["Tangent and normal to a curve","Slope of tangent = dy/dx at that point; normal's slope is the negative reciprocal."],["Rate of change / related rates","Relate the rates of two changing quantities via the chain rule."],["Increasing/decreasing functions","f'(x)>0 means increasing, f'(x)<0 means decreasing on that interval."],["Maxima and minima","f'(x)=0 gives critical points; the sign of f''(x) there tells you max or min."],["Concavity and points of inflection","f''(x) sign gives concave up/down; an inflection point is where f'' changes sign."],["Rolle's theorem and Lagrange's Mean Value Theorem","Know the exact conditions and the geometric picture — often used in existence-type proofs."],["Approximation using derivatives","dy ≈ f'(x)dx — used to estimate small changes without recomputing the function."]]],["Indefinite Integration",[["Standard integration formulas","The reverse of the standard derivative list — worth memorizing completely."],["Integration by substitution","Spot a function-derivative pair in the integrand to simplify it."],["Integration by parts","ILATE rule to pick the first function; formula ∫u dv = uv − ∫v du."],["Partial fractions for rational functions","Decompose based on the factors of the denominator before integrating term by term."],["Integration of irrational functions","Recognize the standard forms that need a specific (often trigonometric) substitution."],["Standard trigonometric substitutions","t = tan(x/2) is the universal substitution; several other special forms have their own specific substitution."]]],["Definite Integration",[["Fundamental theorem of calculus","Connects the definite integral to the antiderivative evaluated at the limits."],["Properties of definite integrals","King's property ∫f(x)dx = ∫f(a−x)dx over [0,a] and other symmetry tricks that simplify evaluation."],["Using odd/even/periodicity to evaluate","Shortcuts based on the function's symmetry over symmetric limits."],["Definite integral as a limit of a sum","The Riemann sum definition — needed for specific summation-limit problems."],["Wallis' formula","A reduction formula for integrals of sinⁿx or cosⁿx from 0 to π/2."],["Leibnitz rule","Formula for differentiating an integral whose limits are themselves functions of the variable."]]],["Area Under Curves",[["Area between a curve and an axis","∫y dx between the limits gives the area — mind the sign convention for area below the x-axis."],["Area between two curves","Integrate the difference of the upper curve minus the lower curve."],["Integrating with respect to y","Swap variables when the curve is easier to express as x = f(y)."],["Using symmetry to simplify area","Symmetry about an axis often cuts the required calculation in half."]]],["Differential Equations",[["Order and degree","Order = highest derivative present; degree = power of the highest-order derivative, after clearing radicals/fractions."],["Formation of differential equations","Eliminate the arbitrary constants by differentiating the given family of curves."],["Variable separable method","Rearrange so all x-terms and y-terms are on separate sides, then integrate both."],["Homogeneous differential equations","Substitution y = vx reduces it to a variable-separable equation."],["Linear differential equations","dy/dx + Py = Q; integrating factor IF = e^∫Pdx, solution y×IF = ∫Q×IF dx."],["Exact differential equations","Condition for exactness: ∂M/∂y = ∂N/∂x."]]],["Vector Algebra",[["Direction cosines and direction ratios","l, m, n satisfy l²+m²+n² = 1; direction ratios are just proportional to these."],["Position vectors and section formula","Dividing a line segment in a given ratio, expressed using position vectors."],["Dot product applications","A.B = |A||B|cosθ; projection of A on B = A.B/|B|."],["Cross product applications","|A×B| gives the area of the parallelogram formed by A and B; half that gives the triangle's area."],["Scalar triple product and coplanarity","[a b c] = 0 means the three vectors are coplanar; otherwise it gives the parallelepiped's volume."],["Vector triple product","a×(b×c) = b(a.c) − c(a.b) — a very useful identity for simplification."]]],["3D Geometry",[["Equation of a line in 3D","(x−x1)/a = (y−y1)/b = (z−z1)/c, using the point and the direction ratios."],["Equation of a plane","Normal form, intercept form, point-normal form — choose based on the data given."],["Angle between lines/planes","Use direction ratios (lines) or normal vectors (planes) with the dot product formula."],["Shortest distance between skew lines","A formula using the cross product of the direction vectors and the connecting vector."],["Distance of a point from a plane","|ax1+by1+cz1+d|/√(a²+b²+c²)."],["Coplanarity of two lines","Checked via a determinant condition on the direction ratios and the connecting vector."]]],["Probability",[["Classical definition and basic rules","Favorable outcomes / total outcomes; addition and multiplication theorems for combining events."],["Independent vs mutually exclusive events","Independent: P(A∩B)=P(A)P(B). Mutually exclusive: P(A∩B)=0 — these are different concepts, a very common mix-up."],["Conditional probability","P(A|B) = P(A∩B)/P(B)."],["Total probability theorem","P(A) = ΣP(A|Bᵢ)P(Bᵢ) over a partition of the sample space."],["Bayes' theorem","Reverses conditional probability — pairs with the total probability theorem when there are multiple possible causes."],["Binomial distribution","P(X=r) = ⁿCᵣ pʳ q^(n−r) — models repeated independent trials with two outcomes."],["Random variables and expectation","E(X) = Σx·P(x); paired with the variance formulas for discrete distributions."]]],["Trigonometric Ratios & Identities",[["Basic trigonometric identities","sin²+cos²=1 and everything derived from it — reciprocal and quotient relations."],["Compound angle formulas","Expansions for sin(A±B), cos(A±B), tan(A±B)."],["Multiple and sub-multiple angle formulas","sin2A, cos2A (three equivalent forms), sin3A, cos3A, and the half-angle formulas."],["Sum-to-product and product-to-sum formulas","Convert between sums and products of trig functions — useful for simplifying/factoring expressions."],["Conditional trigonometric identities","Identities that hold specifically when A+B+C=180°, i.e. the angles of a triangle."],["Max/min value of trig expressions","a sinθ + b cosθ has range ±√(a²+b²) — a very fast shortcut for optimization questions."]]],["Trigonometric Equations",[["Principal vs general solutions","Principal solutions are restricted to a specific interval, like [0, 2π)."],["General solution of trig equations","Standard general solutions for sinθ=sinα, cosθ=cosα, tanθ=tanα."],["Solving via substitution/factoring","Reduce the equation to one of the standard forms using identities, before solving."],["Equations involving multiple angles","Extra care needed when the angle is multiplied — check for extraneous solutions."]]],["Inverse Trigonometric Functions",[["Domain and range of inverse trig functions","Ranges are restricted so each function becomes one-one and onto — hence invertible."],["Standard identities","sin⁻¹x + cos⁻¹x = π/2, and similar identities connecting the inverse trig functions."],["Graphs of inverse trig functions","Visualizing shape and range helps a lot when solving related equations or inequalities."],["Simplification via substitution","x = sinθ or x = tanθ substitutions simplify complicated inverse trig expressions."]]],["Statistics",[["Measures of central tendency","Mean, median, mode for grouped/ungrouped data; empirical relation mode = 3median − 2mean."],["Mean deviation","The average of the absolute deviations from the mean or median."],["Measures of dispersion","Variance and standard deviation formulas for grouped/ungrouped data; SD = √variance."],["Combined mean and variance","Formulas to merge the statistics of two separate datasets into one."]]]]};
+/* ================= COLORS ================= */
+function subjectMeta(key){
+  const map = {
+    Physics:   {cls:'physics', color:'#29d3ee', dim:'rgba(41,211,238,0.13)', label:'Physics'},
+    Chemistry: {cls:'chem',    color:'#f5a623', dim:'rgba(245,166,35,0.13)', label:'Chemistry'},
+    Maths:     {cls:'maths',   color:'#e0399e', dim:'rgba(224,57,158,0.13)', label:'Maths'}
+  };
+  return map[key];
+}
+const SUBJECT_KEYS = ['Physics','Chemistry','Maths'];
+function chapters(s){ return DATA[s]; }
+
+/* ================= STATE HELPERS ================= */
+function itemKey(s,ci,si){ return s+'|'+ci+'|'+si; }
+function chapterMetaKey(s,ci){ return s+'|'+ci; }
+function getItemState(s,ci,si){ return STATE.items[itemKey(s,ci,si)] || 0; }
+function setItemState(s,ci,si,val){
+  const k = itemKey(s,ci,si);
+  if(val===0){ delete STATE.items[k]; } else { STATE.items[k]=val; }
+  STATE.meta[chapterMetaKey(s,ci)] = { last: Date.now() };
+  persist();
+}
+
+function computeChapterStats(s,ci){
+  const subs = chapters(s)[ci][1];
+  let cold=0, assisted=0;
+  subs.forEach((_,si)=>{
+    const st = getItemState(s,ci,si);
+    if(st===2) cold++; else if(st===1) assisted++;
+  });
+  const total = subs.length, done = cold+assisted;
+  const pct = total ? Math.round((done/total)*100) : 0;
+  return {total, cold, assisted, done, pct, remaining: total-done};
+}
+
+function computeSubjectStats(s){
+  let total=0, done=0, masteredChapters=0;
+  chapters(s).forEach((ch,ci)=>{
+    const st = computeChapterStats(s,ci);
+    total+=st.total; done+=st.done;
+    if(st.total>0 && st.done===st.total) masteredChapters++;
+  });
+  const pct = total ? Math.round((done/total)*100) : 0;
+  return {total, done, pct, chapterCount:chapters(s).length, masteredChapters};
+}
+
+function computeOverallStats(){
+  let total=0, done=0, mastered=0, chapterCount=0;
+  SUBJECT_KEYS.forEach(s=>{
+    const st = computeSubjectStats(s);
+    total+=st.total; done+=st.done; mastered+=st.masteredChapters; chapterCount+=st.chapterCount;
+  });
+  const pct = total ? Math.round((done/total)*100) : 0;
+  return {total, done, pct, mastered, chapterCount};
+}
+
+function timeAgo(ts){
+  const diff = Date.now()-ts;
+  const min = Math.floor(diff/60000);
+  if(min<1) return 'Just now';
+  if(min<60) return min+'m ago';
+  const hr = Math.floor(min/60);
+  if(hr<24) return hr+'h ago';
+  const day = Math.floor(hr/24);
+  if(day<30) return day+'d ago';
+  const mo = Math.floor(day/30);
+  return mo+'mo ago';
+}
+
+/* ================= ICONS ================= */
+const backIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
+const checkIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+const searchIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>`;
+const chevronIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`;
+const shuffleIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>`;
+const resetIconSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>`;
+
+function ringSVG(pct, size, stroke, color){
+  const r = (size-stroke)/2;
+  const c = 2*Math.PI*r;
+  const offset = c - (Math.max(0,Math.min(100,pct))/100)*c;
+  return `<svg class="ring-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle class="ring-track" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"></circle>
+    <circle class="ring-fill" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke="${color}"
+      stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+      transform="rotate(-90 ${size/2} ${size/2})"></circle>
+    <text x="50%" y="53%" text-anchor="middle" dominant-baseline="middle" font-family="Space Grotesk, sans-serif" font-weight="700" font-size="${size*0.27}" fill="${color}">${pct}</text>
+  </svg>`;
+}
+function waveSVG(){
+  return `<svg class="wave" viewBox="0 0 400 10" preserveAspectRatio="none"><path d="M0,5 Q25,0 50,5 T100,5 T150,5 T200,5 T250,5 T300,5 T350,5 T400,5"/></svg>`;
+}
+
+function setAccent(meta){
+  document.documentElement.style.setProperty('--accent', meta.color);
+  document.documentElement.style.setProperty('--accent-dim', meta.dim);
+}
+
+/* ================= VIEW STATE ================= */
+let currentSubject = null;
+let currentChapterIdx = null;
+let currentOrder = [];
+let hintSeen = {};
+
+function setApp(html){ document.getElementById('app').innerHTML = html; }
+
+/* smooth slide/fade transition between screens. direction: 'forward' | 'back' | 'refresh' */
+function navigate(renderFn, direction){
+  const app = document.getElementById('app');
+  const outX = direction==='forward' ? -14 : (direction==='back' ? 14 : 0);
+  const inX  = direction==='forward' ? 14 : (direction==='back' ? -14 : 0);
+  app.style.transition = 'opacity .15s ' + 'ease' + ', transform .15s var(--ease-out)';
+  app.style.opacity = '0';
+  app.style.transform = 'translateX('+outX+'px) scale(.985)';
+  setTimeout(()=>{
+    renderFn();
+    const app2 = document.getElementById('app');
+    app2.style.transition = 'none';
+    app2.style.opacity = '0';
+    app2.style.transform = 'translateX('+inX+'px) scale(.985)';
+    void app2.offsetWidth;
+    requestAnimationFrame(()=>{
+      app2.style.transition = 'opacity .3s var(--ease-out), transform .3s var(--ease-out)';
+      app2.style.opacity = '1';
+      app2.style.transform = 'translateX(0) scale(1)';
+    });
+  }, 150);
+}
+
+/* ================= HOME ================= */
+function renderHome(){
+  setAccent(subjectMeta('Physics'));
+  const overall = computeOverallStats();
+  const subjectsHTML = SUBJECT_KEYS.map(s=>{
+    const meta = subjectMeta(s);
+    const st = computeSubjectStats(s);
+    return `<div class="subject-card ${meta.cls}" data-action="open-subject" data-subject="${s}">
+      <div class="ring">${ringSVG(st.pct,54,5,meta.color)}</div>
+      <div class="info">
+        <div class="name">${meta.label}</div>
+        <div class="meta">${st.chapterCount} chapters · ${st.masteredChapters} mastered</div>
+      </div>
+      <div class="chev">${chevronIconSVG}</div>
+    </div>`;
+  }).join('');
+
+  setApp(`
+    <div class="topbar">
+      <div class="title-wrap"><div class="brand">SURFACE<span class="dot">.</span></div></div>
+    </div>
+    <div class="wrap">
+      <div class="home-hero">
+        <p>Open a chapter, recall each subtopic from your notes in your head, then tick it. Stuck? Tap the hint for a gist to jog your memory.</p>
+      </div>
+      <div class="stat-strip">
+        <div class="stat-box"><div class="num">${overall.pct}%</div><div class="lbl">Overall recall</div></div>
+        <div class="stat-box"><div class="num">${overall.mastered}</div><div class="lbl">Mastered</div></div>
+        <div class="stat-box"><div class="num">${overall.chapterCount}</div><div class="lbl">Chapters</div></div>
+      </div>
+      <div class="search-box">
+        ${searchIconSVG}
+        <input type="text" id="globalSearch" placeholder="Jump to a chapter…" autocomplete="off">
+      </div>
+      <div id="searchResults" class="search-results"></div>
+      <div class="subject-grid">${subjectsHTML}</div>
+      <div class="footer-note">Recall first. Peek at notes only after you tick or hint.</div>
+    </div>
+  `);
+
+  document.querySelectorAll('[data-action="open-subject"]').forEach(el=>{
+    el.addEventListener('click', ()=> navigate(()=>renderChapterList(el.dataset.subject), 'forward'));
+  });
+  const searchInput = document.getElementById('globalSearch');
+  searchInput.addEventListener('input', (e)=>{
+    const q = e.target.value.trim().toLowerCase();
+    const resultsEl = document.getElementById('searchResults');
+    if(!q){ resultsEl.innerHTML=''; return; }
+    let hits=[];
+    SUBJECT_KEYS.forEach(s=>{
+      chapters(s).forEach((ch,ci)=>{
+        if(ch[0].toLowerCase().includes(q)) hits.push({s,ci,name:ch[0]});
+      });
+    });
+    hits = hits.slice(0,8);
+    resultsEl.innerHTML = hits.map(h=>{
+      const meta = subjectMeta(h.s);
+      return `<div class="search-hit" data-action="open-chapter" data-subject="${h.s}" data-idx="${h.ci}">
+        <div><div>${h.name}</div><div class="sub">${meta.label}</div></div>
+        <div class="chev" style="color:${meta.color}">${chevronIconSVG}</div>
+      </div>`;
+    }).join('') || `<div class="search-hit">No chapters found</div>`;
+    resultsEl.querySelectorAll('[data-action="open-chapter"]').forEach(el=>{
+      el.addEventListener('click', ()=> navigate(()=>openChecklist(el.dataset.subject, parseInt(el.dataset.idx,10)), 'forward'));
+    });
+  });
+}
+
+/* ================= CHAPTER LIST ================= */
+function renderChapterList(s){
+  currentSubject = s;
+  const meta = subjectMeta(s);
+  setAccent(meta);
+  const chs = chapters(s);
+  const cardsHTML = chs.map((ch,ci)=>{
+    const st = computeChapterStats(s,ci);
+    const metaInfo = STATE.meta[chapterMetaKey(s,ci)];
+    const lastText = metaInfo ? timeAgo(metaInfo.last) : 'Not opened yet';
+    const delay = Math.min(ci*28, 320);
+    return `<div class="chapter-card" data-action="open-chapter" data-idx="${ci}" style="animation-delay:${delay}ms">
+      <div class="ringmini">${ringSVG(st.pct,42,4,meta.color)}</div>
+      <div class="info">
+        <div class="name">${ch[0]}</div>
+        <div class="meta"><span>${st.done}/${st.total} recalled</span><span class="dot-sep"></span><span>${lastText}</span></div>
+      </div>
+      <div class="chev">${chevronIconSVG}</div>
+    </div>`;
+  }).join('');
+
+  setApp(`
+    <div class="topbar">
+      <button class="back" data-action="go-home">${backIconSVG}</button>
+      <div class="title-wrap">
+        <div class="eyebrow">${meta.label}</div>
+        <h1>Chapters</h1>
+      </div>
+    </div>
+    ${waveSVG()}
+    <div class="wrap">
+      <div class="filter-row">
+        <div class="search-box" style="flex:1;margin-bottom:0;">
+          ${searchIconSVG}
+          <input type="text" id="chapterFilter" placeholder="Filter chapters…" autocomplete="off">
+        </div>
+      </div>
+      <div class="chapter-grid" id="chapterGrid">${cardsHTML}</div>
+    </div>
+  `);
+
+  document.querySelector('[data-action="go-home"]').addEventListener('click', ()=> navigate(renderHome, 'back'));
+  document.querySelectorAll('[data-action="open-chapter"]').forEach(el=>{
+    el.addEventListener('click', ()=> navigate(()=>openChecklist(s, parseInt(el.dataset.idx,10)), 'forward'));
+  });
+  document.getElementById('chapterFilter').addEventListener('input', (e)=>{
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('#chapterGrid .chapter-card').forEach(card=>{
+      const name = card.querySelector('.name').textContent.toLowerCase();
+      card.style.display = name.includes(q) ? 'flex' : 'none';
+    });
+  });
+}
+
+/* ================= CHECKLIST ================= */
+function openChecklist(s, ci){
+  currentSubject = s; currentChapterIdx = ci;
+  hintSeen = {};
+  const subs = chapters(s)[ci][1];
+  currentOrder = subs.map((_,i)=>i);
+  renderChecklist();
+}
+
+function shuffleOrder(){
+  for(let i=currentOrder.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [currentOrder[i],currentOrder[j]]=[currentOrder[j],currentOrder[i]];
+  }
+}
+
+function renderChecklist(){
+  const s=currentSubject, ci=currentChapterIdx;
+  const meta = subjectMeta(s);
+  setAccent(meta);
+  const chapterName = chapters(s)[ci][0];
+  const subs = chapters(s)[ci][1];
+  const stats = computeChapterStats(s,ci);
+
+  const rowsHTML = currentOrder.map((si,pos)=>{
+    const title = subs[si][0], hint = subs[si][1];
+    const st = getItemState(s,ci,si);
+    const hintUsedFlag = hintSeen[si] || st===1;
+    const delay = Math.min(pos*26, 300);
+    return `<div class="sub-row state-${st}" data-si="${si}" style="animation-delay:${delay}ms">
+      <div class="sub-row-top">
+        <button class="tick-btn" data-action="tick" data-si="${si}">${checkIconSVG}</button>
+        <div class="sub-row-title">${title}</div>
+        <button class="hint-btn ${hintUsedFlag?'used':''}" data-action="hint" data-si="${si}">?</button>
+      </div>
+      <div class="hint-pane" id="hint-${si}"><div class="hint-pane-inner">${hint}</div></div>
+      <div class="assist-tag">Recalled with hint</div>
+    </div>`;
+  }).join('');
+
+  setApp(`
+    <div class="topbar">
+      <button class="back" data-action="go-chapters">${backIconSVG}</button>
+      <div class="title-wrap">
+        <div class="eyebrow">${meta.label}</div>
+        <h1>${chapterName}</h1>
+      </div>
+    </div>
+    ${waveSVG()}
+    <div class="wrap">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-track"><div class="progress-bar-fill" style="width:${stats.pct}%"></div></div>
+        <div class="progress-legend">
+          <span><b>${stats.cold}</b> cold · <b>${stats.assisted}</b> assisted</span>
+          <span>${stats.remaining} left</span>
+        </div>
+      </div>
+      <div class="tools-row">
+        <button class="chip" data-action="shuffle">${shuffleIconSVG} Shuffle order</button>
+        <button class="chip reset-chip" data-action="reset-chapter">${resetIconSVG} Reset</button>
+      </div>
+      <div class="sub-list" id="subList">${rowsHTML || '<div class="empty-state">No subtopics found.</div>'}</div>
+    </div>
+  `);
+
+  document.querySelector('[data-action="go-chapters"]').addEventListener('click', ()=> navigate(()=>renderChapterList(currentSubject), 'back'));
+  document.querySelector('[data-action="shuffle"]').addEventListener('click', ()=>{ shuffleOrder(); navigate(renderChecklist, 'refresh'); });
+  document.querySelector('[data-action="reset-chapter"]').addEventListener('click', ()=>{
+    if(confirm('Reset all recall progress for this chapter?')){
+      const subs2 = chapters(s)[ci][1];
+      subs2.forEach((_,si)=>{ delete STATE.items[itemKey(s,ci,si)]; });
+      persist();
+      hintSeen = {};
+      navigate(renderChecklist, 'refresh');
+    }
+  });
+  document.querySelectorAll('[data-action="tick"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const si = parseInt(btn.dataset.si,10);
+      const cur = getItemState(s,ci,si);
+      let next;
+      if(cur===0){ next = hintSeen[si] ? 1 : 2; }
+      else { next = 0; hintSeen[si]=false; }
+      setItemState(s,ci,si,next);
+      updateRowDOM(s,ci,si,next);
+      updateProgressDOM(s,ci);
+    });
+  });
+  document.querySelectorAll('[data-action="hint"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const si = parseInt(btn.dataset.si,10);
+      const pane = document.getElementById('hint-'+si);
+      const st = getItemState(s,ci,si);
+      if(st===0){ hintSeen[si]=true; btn.classList.add('used'); }
+      pane.classList.toggle('open');
+    });
+  });
+}
+
+/* surgically update one row's DOM in place so CSS transitions between
+   states actually play, instead of tearing down and rebuilding the row */
+function updateRowDOM(s,ci,si,state){
+  const row = document.querySelector('.sub-row[data-si="'+si+'"]');
+  if(!row) return;
+  row.className = 'sub-row state-'+state;
+  const hintBtn = row.querySelector('.hint-btn');
+  const hintUsedFlag = hintSeen[si] || state===1;
+  hintBtn.classList.toggle('used', !!hintUsedFlag);
+  const tickBtn = row.querySelector('.tick-btn');
+  tickBtn.classList.remove('pop');
+  void tickBtn.offsetWidth; /* force reflow so the animation can retrigger */
+  tickBtn.classList.add('pop');
+}
+
+function updateProgressDOM(s,ci){
+  const stats = computeChapterStats(s,ci);
+  const fill = document.querySelector('.progress-bar-fill');
+  if(fill) fill.style.width = stats.pct+'%';
+  const legend = document.querySelector('.progress-legend');
+  if(legend){
+    legend.innerHTML = '<span><b>'+stats.cold+'</b> cold · <b>'+stats.assisted+'</b> assisted</span><span>'+stats.remaining+' left</span>';
+  }
+}
+
+/* ================= INIT ================= */
+renderHome();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/SURFACE/sw.js').catch(()=>{});
+  });
+}
+
+</script>
+</body>
+</html>
