@@ -1,0 +1,46 @@
+{
+  "name": "SURFACE. Active Recall",
+  "short_name": "SURFACE",
+  "description": "Active recall checklist for JEE Physics, Chemistry, and Maths. Recall each subtopic from memory, tick it, or tap a hint.",
+  "start_url": "/SURFACE/index.html",
+  "scope": "/SURFACE/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#08080c",
+  "theme_color": "#29d3ee",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/SURFACE/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/SURFACE/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/SURFACE/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/SURFACE/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/SURFACE/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
